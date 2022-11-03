@@ -47,8 +47,10 @@ class Poliastro_env(gym.Env):
                                        dtype=np.float16)
         
         #Obaservation space
-        self.observation_space = spaces.Box(low=-10000, high=10000, shape=(1, 1, 1),
-                                       dtype=np.float16)
+        self.observation_space = spaces.Box(low=-16000,
+                                            high=16000,
+                                            shape=(3,),
+                                            dtype=np.float16)
        
     def _get_obs(self):
         
@@ -69,8 +71,8 @@ class Poliastro_env(gym.Env):
         
         """If crash, end the task"""
         done=True if self.ground_check() or self.too_far() or reward>=10 else False
-         
-        return reward, done, observation
+        info=self._get_obs()
+        return observation["agent"].astype("float16"), reward, done,info
     
     def get_reward(self):
         
@@ -112,7 +114,8 @@ class Poliastro_env(gym.Env):
 
     def reset(self):
         self.orbit=Orbit.from_vectors(Earth, self.r_1, self.v_1)
-        return None
-
+        observation=self._get_obs()
+        return observation["agent"].astype("float16")
+    
     def render(self):
         pass
