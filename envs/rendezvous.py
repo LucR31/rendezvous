@@ -71,8 +71,10 @@ class Poliastro_env(gym.Env):
         
         """If crash, end the task"""
         done=True if self.ground_check() or self.too_far() or reward>=10 else False
+        
         info=self._get_obs()
-        return observation["agent"].astype("float16"), reward, done,info
+        
+        return observation["agent"].astype("float16"), reward, done, info
     
     def get_reward(self):
         
