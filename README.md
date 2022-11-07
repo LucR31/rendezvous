@@ -1,10 +1,10 @@
 # Spaceship rendezvous<br> with Reinforcement Learning, part 1
-<hr>
+
 <b>Description:</b> The agent, a spaceship orbiting the Earth, wants to make a rendezvous with a target spaceship: with in a fixed orbit aroud the earth. The agent has limited fuel. It will try to use it up to get its orbit as close as possible with the target orbit. <br><br>
 <b>Method:</b> We use RL methods on the agent, form different initial orbits with the end of finding the target orbit as fuel efficient as possible. <br><br>
 
 ## The Environment
-<hr>
+
 Made with pygame, and using Ploiastro library.<br>
 
 Steps of 1 minute<br>
@@ -28,6 +28,6 @@ Preview:<br>
 
 
 ## PPO
-<hr>
+
 
 
