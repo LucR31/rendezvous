@@ -19,11 +19,6 @@ import pygame
 
 #==================================================================
 
-""" Goal spaceship data
-r = [-6045, -3490, 2500] << u.km
-v = [-3.457, 6.618, 2.533] << u.km / u.s
-nostromo = Orbit.from_vectors(Earth, r, v)"""
-
 """Other values"""
 STEP=1
 PLANET_RADIUS=6371
@@ -31,6 +26,7 @@ BOX_LIMIT=np.inf
 FUEL=1000
 list_points_target=[]
 list_points_agent=[]
+
 #==============================class start=========================
 
 
