@@ -26,7 +26,7 @@ The reward system gives one point when the orbit gets closer to the target's orb
 Before and after training:<br>
 
 <p float="left">
-<img  src="data/notrain.gif" width="600" height="600"/>
-<img  src="data/trained.gif" width="600" height="600"/>
+<img  src="data/notrain.gif" width="500" height="500"/>
+<img  src="data/trained.gif" width="500" height="500"/>
 </p>
 
