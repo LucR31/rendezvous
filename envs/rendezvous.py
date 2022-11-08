@@ -23,7 +23,7 @@ import pygame
 STEP=1
 PLANET_RADIUS=6371
 BOX_LIMIT=np.inf
-FUEL=1000
+FUEL=4000
 list_points_target=[]
 list_points_agent=[]
 
@@ -31,7 +31,7 @@ list_points_agent=[]
 
 
 class Poliastro_env(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
     
     def __init__(self,r_1= [-7045, -2910, 2504],
                       v_1= [-3.357, 5.728, 2.133],
@@ -221,12 +221,12 @@ class Poliastro_env(gym.Env):
         canvas.blit(img6, (50,107))
         
         # planet
-        pygame.draw.circle(
+        """pygame.draw.circle(
             canvas,
             (0, 255, 0),
             [500,500],90,
             0,
-        )
+        )"""
         
     
         # First we draw the target
@@ -256,7 +256,7 @@ class Poliastro_env(gym.Env):
         
        
         # Now we draw the agent
-        r_agent=(self.orbit.r.value+[8000,8000,0])*0.05
+        r_agent=(self.orbit.r.value+[8000,8000,-8000])*0.05
         
         pygame.draw.circle(
             canvas,

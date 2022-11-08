@@ -13,7 +13,7 @@ def play_game_train(episodes, env, model):
         
         while not done:
             
-            #env.render()
+            env.render()
             action,_=model.predict(obs)
             obs, reward, done, info=env.step(action)
             score+=reward

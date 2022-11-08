@@ -1,4 +1,4 @@
-# Spaceship rendezvous<br> with Reinforcement Learning, part 1
+# Spaceship rendezvous<br> with Reinforcement Learning
 
 <b>Description:</b> The agent, a spaceship orbiting the Earth, wants to make a rendezvous with a target spaceship: with in a fixed orbit aroud the earth. The agent has limited fuel. It will try to use it up to get its orbit as close as possible with the target orbit. <br><br>
 <b>Method:</b> We use RL methods on the agent, form different initial orbits with the end of finding the target orbit as fuel efficient as possible. <br><br>
@@ -21,13 +21,12 @@ The orbits difference is measured as follows:<br>
 
 The reward system gives one point when the orbit gets closer to the target's orbit and minus one when gets further from it.<br>
 
-Preview:<br>
-
-
-<img style="margin-left: 100px;" src="data/orb.gif" width="500" height="500"/>
-
-
 ## PPO
 
+Before and after training:<br>
 
+<p float="left">
+<img  src="data/notrain.gif" width="600" height="600"/>
+<img  src="data/trained.gif" width="600" height="600"/>
+</p>
 
