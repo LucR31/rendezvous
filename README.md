@@ -23,11 +23,7 @@ An orbit can be described by the following six parameters: <br>
     <li>Ascending node, $\Omega$</li>
     <li>True anomaly, $\upsilon$</li>
 </ul>
-<!--The <b>orbits difference</b> is measured as follows:<br>
-Let<br> $r=\frac{a(1-e^2)}{1+ecos(\upsilon)}$<br>
-then the orbit difference is measured as the sum of:<br>
-$r^2+r'^2-2rr'cos(i-i')$<br>
-for different values of the True anomaly.<br>-->
+The <b>orbits difference</b> is measured as teh sum of the distances between apogees and perigees.
 
 The <b>reward system</b> gives one point when the orbit gets closer to the target's orbit and minus one when it gets further from it.<br>
 
