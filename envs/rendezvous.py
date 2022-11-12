@@ -5,6 +5,8 @@ from poliastro.bodies import Earth
 from poliastro.twobody import Orbit
 from poliastro.plotting import OrbitPlotter2D
 from poliastro.maneuver import Maneuver
+from poliastro.constants import GM_earth
+from poliastro.core.elements import eccentricity_vector,rv_pqw
 
 #gym and other required libraries
 
@@ -19,14 +21,16 @@ import pygame
 
 #==================================================================
 
-STEP=1 #min
+k = GM_earth.value
+STEP=2 #min
 PLANET_RADIUS=6371 #km
 BOX_LIMIT=np.inf
 TRACE_POINTS=1000
 list_points_target=[]
 list_points_agent=[]
-FUEL=2000
-DV=5
+FUEL=500
+DV=10
+
 #==============================class starts========================
 def vect_l(vector):
     return np.sqrt(sum([x**2 for x in vector]))
@@ -35,8 +39,8 @@ class Poliastro_env(gym.Env):
     
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
     
-    def __init__(self,r_1= [-6345, -4590, 2500],#position vector agent (km)
-                      v_1= [-3.457, 6.618, 2.533], #velocity vector agent (km/s)
+    def __init__(self,r_1= [-6045, -3490, 2500],#position vector agent (km)
+                      v_1= [-3.657, 6.818, 2.633], #velocity vector agent (km/s)
                       r = [-6045, -3490, 2500], #position vector target (km)
                       v = [-3.557, 6.718, 2.633],#velocity vector target (km/s)
                       distance="euclidean",
@@ -63,6 +67,7 @@ class Poliastro_env(gym.Env):
         self.target = Orbit.from_vectors(Earth, self.r, self.v)
         self.fuel=fuel
         
+        
         #Action space 
         self.action_space = spaces.Box(low=np.array([-DV, -DV, -DV]),
                                        high=np.array([DV,DV,DV]),
@@ -72,18 +77,19 @@ class Poliastro_env(gym.Env):
             
             { "agent":  spaces.Box(low=-BOX_LIMIT,
                                             high=BOX_LIMIT,
-                                            shape=(3,),
+                                            shape=(6,),
                                             dtype=np.float16),
              
               "target":  spaces.Box(low=-BOX_LIMIT,
                                             high=BOX_LIMIT,
-                                            shape=(3,),
+                                            shape=(6,),
                                             dtype=np.float16)
             })
         
     def _get_obs(self):
-        return {"agent": self.orbit.r.value.astype("float16"), "target": self.target.r.value.astype("float16")}
-    
+        #return {"agent": self.orbit.r.value.astype("float16"), "target": self.target.r.value.astype("float16")}
+        return {"agent": [x[0] for x in self.orbit_params()], "target": [x[1] for x in self.orbit_params()]}
+        
     def _get_info(self):
         apo_diff,peri_diff=self.apo_peri()
         
@@ -123,6 +129,15 @@ class Poliastro_env(gym.Env):
             
         """Take the action and make time pass"""
         dv = action << (u.m / u.s)
+        a,e = self.orbit_params()[0],self.orbit_params()[1]
+        apoapsis=a[0]*(e[0]+1)
+        periapsis=a[0]*(-e[0]+1)
+        
+        """if vect_l(self.orbit.r.value)<=apoapsis+50 or vect_l(self.orbit.r.value)>=apoapsis-50:
+            self.orbit = self.orbit.apply_maneuver(Maneuver.impulse(dv))
+        elif vect_l(self.orbit.r.value)<=periapsis+50 or vect_l(self.orbit.r.value)>=periapsis-50:
+            self.orbit = self.orbit.apply_maneuver(Maneuver.impulse(dv))"""
+        
         self.orbit = self.orbit.apply_maneuver(Maneuver.impulse(dv))
         self.orbit=self.orbit.propagate(STEP<<u.min)
         self.target=self.target.propagate(STEP<<u.min)
@@ -135,13 +150,13 @@ class Poliastro_env(gym.Env):
         
         """If crash or no fuel end the task"""
         #done=True if self.fuel<=0 else False
-        done=True if self.ground_check() or self.fuel<=0 else False
+        done=True if self.ground_check() or self.fuel<=0 or self.get_reward==1 else False
         """Get reward """
         reward=self.get_reward(dist_initial)
        
         """INFO"""
-        info=self._get_info()
-               
+        #info=self._get_info()
+        info={}      
         if self.render_mode == "human":
             self._render_frame()
         
@@ -165,7 +180,7 @@ class Poliastro_env(gym.Env):
         else:
             dist_=self.check_distance()
             
-        if dist_<10:
+        if dist_<=100000:
             return 1
         return 0
               
@@ -175,7 +190,8 @@ class Poliastro_env(gym.Env):
     def distance_check_2(self):
         return np.sqrt(sum([(x[0]-x[1])**2 for x in self.orbit_params()]))
     
-    def check_distance(self): 
+    def check_distance_3(self): 
+        """Optimal distance: 100000"""
         a , e, i = self.orbit_params()[0] , self.orbit_params()[1],self.orbit_params()[2] 
         diff=0
         for x in np.linspace(0, 6, 20):
@@ -185,6 +201,34 @@ class Poliastro_env(gym.Env):
             diff+=r_1**2+r_2**2-2*r_1*r_2*np.cos(i[0]-i[1])
            
         return diff
+    
+    def check_distance(self):
+        
+        ecc_t=self.target.ecc
+        nu_t=self.target.nu
+        p_t=self.target.p
+        
+        ecc_o=self.orbit.ecc
+        nu_o=self.orbit.nu
+        p_o=self.orbit.p
+
+        r_t, v_t = rv_pqw(k, p_t, ecc_t, nu_t)
+        v_ecc_t=eccentricity_vector(k,r_t,v_t)
+        
+        r_o, v_o = rv_pqw(k, p_o, ecc_o, nu_o)
+        v_ecc_o=eccentricity_vector(k,r_o,v_o)
+        
+        t_p=self.target.r_p.value
+        t_a=self.target.r_a.value
+        o_p=self.orbit.r_p.value
+        o_a=self.orbit.r_a.value
+        
+        diff_a=vect_l(t_a*v_ecc_t-o_a*v_ecc_o)
+        diff_p=vect_l(t_p*v_ecc_t-o_p*v_ecc_o)
+        
+        return diff_a+diff_p
+        
+        
 
     def reset(self):
         
@@ -237,6 +281,24 @@ class Poliastro_env(gym.Env):
         canvas.blit(img5, (50,87))
         canvas.blit(img6, (50,107))
         
+        #================panel two=================
+        a_=font.render(f'a: {round(self.orbit.a.value,2)}', True, (255,0,0))
+        e_=font.render(f'ecc: {round(self.orbit.ecc.value,2)}', True, (255,0,0))
+        i_=font.render(f'inc: {round(self.orbit.inc.value,2)}', True, (255,0,0))
+        
+        a_t=font.render(f'a: {round(self.target.a.value,2)}', True, (0,255,0))
+        e_t=font.render(f'ecc: {round(self.target.ecc.value,2)}', True, (0,255,0))
+        i_t=font.render(f'inc: {round(self.target.inc.value,2)}', True, (0,255,0))
+        
+        canvas.blit(a_, (900,50))
+        canvas.blit(e_, (900,67))
+        canvas.blit(i_, (900,87))
+        
+        canvas.blit(a_t, (800,50))
+        canvas.blit(e_t, (800,67))
+        canvas.blit(i_t, (800,87))
+        
+        
         # planet
         pygame.draw.circle(
             canvas,
@@ -246,7 +308,7 @@ class Poliastro_env(gym.Env):
         )
        
         # First we draw the target
-        r_target=(self.target.r.value+[16000,16000,0])*0.03
+        r_target=(self.target.r.value+[16700,16700,0])*0.03
         pygame.draw.circle(
             canvas,
             (0,255,0),
