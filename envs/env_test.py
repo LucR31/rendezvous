@@ -4,7 +4,8 @@ from tqdm import tqdm
 def play_game_train(episodes, env, model):
 
     list_scores=[]
-   
+    list_orbit_params=[]
+    
     for episode in tqdm(range(1,episodes+1),desc="Progress…"):
     
         obs=env.reset()
@@ -17,8 +18,8 @@ def play_game_train(episodes, env, model):
             action,_=model.predict(obs)
             obs, reward, done, info=env.step(action)
             score+=reward
-           
-            
+            list_orbit_params.append(env.dat_stats())
+          
         list_scores.append(score)
     return np.array(list_scores).mean(), [int(x) for x in list_scores]
     #print("Episode:{} Score:{}".format(episode, score))

@@ -77,18 +77,19 @@ class Poliastro_env(gym.Env):
             
             { "agent":  spaces.Box(low=-BOX_LIMIT,
                                             high=BOX_LIMIT,
-                                            shape=(6,),
+                                            shape=(1,),
                                             dtype=np.float16),
              
               "target":  spaces.Box(low=-BOX_LIMIT,
                                             high=BOX_LIMIT,
-                                            shape=(6,),
+                                            shape=(2,),
                                             dtype=np.float16)
             })
         
     def _get_obs(self):
         #return {"agent": self.orbit.r.value.astype("float16"), "target": self.target.r.value.astype("float16")}
-        return {"agent": [x[0] for x in self.orbit_params()], "target": [x[1] for x in self.orbit_params()]}
+        d1,d2=self.check_distance()
+        return {"agent":np.array([self.orbit.nu.value]), "target":np.array([d1,d2])}
         
     def _get_info(self):
         apo_diff,peri_diff=self.apo_peri()
@@ -125,18 +126,11 @@ class Poliastro_env(gym.Env):
         if self.distance=="euclidean":
             dist_initial=self.distance_check_2()
         else:
-            dist_initial=self.check_distance()
+            d1,d2=self.check_distance()
+            dist_initial=d1+d2
             
         """Take the action and make time pass"""
         dv = action << (u.m / u.s)
-        a,e = self.orbit_params()[0],self.orbit_params()[1]
-        apoapsis=a[0]*(e[0]+1)
-        periapsis=a[0]*(-e[0]+1)
-        
-        """if vect_l(self.orbit.r.value)<=apoapsis+50 or vect_l(self.orbit.r.value)>=apoapsis-50:
-            self.orbit = self.orbit.apply_maneuver(Maneuver.impulse(dv))
-        elif vect_l(self.orbit.r.value)<=periapsis+50 or vect_l(self.orbit.r.value)>=periapsis-50:
-            self.orbit = self.orbit.apply_maneuver(Maneuver.impulse(dv))"""
         
         self.orbit = self.orbit.apply_maneuver(Maneuver.impulse(dv))
         self.orbit=self.orbit.propagate(STEP<<u.min)
@@ -167,9 +161,9 @@ class Poliastro_env(gym.Env):
         if self.distance=="euclidean":
             dist_=self.distance_check_2()
         else:
-            dist_=self.check_distance()
+            d1,d2=self.check_distance()
         
-        if dist_<dist_initial:
+        if d1+d2<dist_initial:
             return 1
         return -1
     
@@ -189,18 +183,6 @@ class Poliastro_env(gym.Env):
        
     def distance_check_2(self):
         return np.sqrt(sum([(x[0]-x[1])**2 for x in self.orbit_params()]))
-    
-    def check_distance_3(self): 
-        """Optimal distance: 100000"""
-        a , e, i = self.orbit_params()[0] , self.orbit_params()[1],self.orbit_params()[2] 
-        diff=0
-        for x in np.linspace(0, 6, 20):
-            
-            r_1=a[0]*(1-e[0]**2)/(1+e[0]*np.cos(x))
-            r_2=a[1]*(1-e[1]**2)/(1+e[1]*np.cos(x))
-            diff+=r_1**2+r_2**2-2*r_1*r_2*np.cos(i[0]-i[1])
-           
-        return diff
     
     def check_distance(self):
         
@@ -226,10 +208,12 @@ class Poliastro_env(gym.Env):
         diff_a=vect_l(t_a*v_ecc_t-o_a*v_ecc_o)
         diff_p=vect_l(t_p*v_ecc_t-o_p*v_ecc_o)
         
-        return diff_a+diff_p
+        return diff_a, diff_p
         
         
-
+    def dat_stats(self):
+        return [x[0]-x[1] for x in self.orbit_params()]
+        
     def reset(self):
         
         self.orbit=Orbit.from_vectors(Earth, self.r_1, self.v_1)
@@ -269,7 +253,8 @@ class Poliastro_env(gym.Env):
         img1 = font.render('Target', True, (255,255,255))
         img2 = font.render('Agent', True, (255,255,255))
         
-        dist=round(self.check_distance(),1)
+        d1,d2=self.check_distance()
+        dist=round(d1+d2,1)
         img3 = font.render(f'Diff: {dist}', True, (255,255,255))
         img4 = font.render(f'Fuel: {round(self.fuel,2)}', True, (255,255,255))
         img5 = font.render(f'Inc. Diff: {round(abs(self.orbit.inc.value-self.target.inc.value),3)} rad', True, (255,255,255))
